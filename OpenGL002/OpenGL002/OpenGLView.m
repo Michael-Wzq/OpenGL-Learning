@@ -9,6 +9,7 @@
 #import "OpenGLView.h"
 #import "CC3GLMatrix.h"
 #import <GLKit/GLKit.h>
+
 const CGFloat kHEIGHT = 568;
 const CGFloat kWIDTH  = 320;
 typedef struct {
@@ -23,10 +24,19 @@ const Vertex Vertices[] = {
 	{  {0, kHEIGHT},      {1, 1, 1, 1},   {0, 0}  },
 	{  {kWIDTH, kHEIGHT}, {1, 1, 1, 1},   {1, 0}  }
 };
-
-
-//  用于跟踪组成每个三角形的索引信息？
+static Vertex FVertices[] = {
+	{  {0, 0},            {1, 1, 1, 1},  {0, 0} },
+	{  {kWIDTH, 0},       {1, 1, 1, 1},   {1, 0}   },
+	{  {0, kHEIGHT},      {1, 1, 1, 1},   {0, 1}   },
+	{  {kWIDTH, kHEIGHT}, {1, 1, 1, 1},   {1, 1}  }
+};
 const GLubyte Indices[] = {0,1,2,3};
+
+@interface OpenGLView ()
+@property (nonatomic, strong) GLFbo *fbo;
+@property (nonatomic, assign) BOOL isFirst;
+@end
+
 
 @implementation OpenGLView
 - (GLuint)setupTexture:(NSString *)fileName {
@@ -71,81 +81,85 @@ const GLubyte Indices[] = {0,1,2,3};
 
 
 
-- (GLuint)compileShader:(NSString *)shaderName withType:(GLenum)shaderType {
-	NSString *shaderPath = [[NSBundle mainBundle] pathForResource:shaderName ofType:@"glsl"];
-	NSError *error;
-	NSString *shaderString = [NSString stringWithContentsOfFile:shaderPath encoding:NSUTF8StringEncoding error:&error];
-	if (!shaderString) {
-		NSLog(@"Error loading shader: %@",error.localizedDescription);
-		exit(1);
-	}
-	GLuint shaderHandle = glCreateShader(shaderType);
-	const char *shaderStringUTF8 = [shaderString UTF8String];
-	int shaderStringLength =(int) [shaderString length];
-	glShaderSource(shaderHandle, 1, &shaderStringUTF8, &shaderStringLength);
-	glCompileShader(shaderHandle);
-	GLint compileSuccess;
-	glGetShaderiv(shaderHandle, GL_COMPILE_STATUS, &compileSuccess);
-	if (compileSuccess == GL_FALSE) {
-		GLchar messages[256];
-		glGetShaderInfoLog(shaderHandle, sizeof(messages), 0, &messages[0]);
-		NSString *messageString = [NSString stringWithUTF8String:messages];
-		NSLog(@"%@", messageString);
-		exit(1);
-	}
-	return shaderHandle;
-}
 
 - (void)compileShaders {
- 
-	// 1
-	GLuint vertexShader = [self compileShader:@"SimpleVertex"
-									 withType:GL_VERTEX_SHADER];
-	GLuint fragmentShader = [self compileShader:@"SimpleFragment"
-									   withType:GL_FRAGMENT_SHADER];
- 
-	// 2
-	GLuint programHandle = glCreateProgram();
-	glAttachShader(programHandle, vertexShader);
-	glAttachShader(programHandle, fragmentShader);
-	glLinkProgram(programHandle);
- 
-	// 3
-	GLint linkSuccess;
-	glGetProgramiv(programHandle, GL_LINK_STATUS, &linkSuccess);
-	if (linkSuccess == GL_FALSE) {
-		GLchar messages[256];
-		glGetProgramInfoLog(programHandle, sizeof(messages), 0, &messages[0]);
-		NSString *messageString = [NSString stringWithUTF8String:messages];
-		NSLog(@"%@", messageString);
-		exit(1);
+ 	 NSString *vertexShaderString = @"MixVertex";
+	 NSString *fragmentShaderString = @"MixFragment";
+	
+	_programHandle = [[GLProgram alloc]initWithVertexShaderFilename:vertexShaderString fragmentShaderFilename:fragmentShaderString];
+	if (!_programHandle.initialized)
+	{
+		[_programHandle addAttribute:@"Position"];
+		[_programHandle addAttribute:@"SourceColor"];
+		[_programHandle addAttribute:@"TexCoordIn"];
+		
+		if (![_programHandle link])
+		{
+			NSString *progLog = [_programHandle programLog];
+			NSLog(@"Program link log: %@", progLog);
+			NSString *fragLog = [_programHandle fragmentShaderLog];
+			NSLog(@"Fragment shader compile log: %@", fragLog);
+			NSString *vertLog = [_programHandle vertexShaderLog];
+			NSLog(@"Vertex shader compile log: %@", vertLog);
+			_programHandle = nil;
+			NSAssert(NO, @"Filter shader link failed");
+		}
 	}
- 
-	// 4
-	glUseProgram(programHandle);
- 
-	// 5
-	_positionSlot = glGetAttribLocation(programHandle, "Position");
+	_positionSlot = [_programHandle attributeIndex:@"Position"];
 	glEnableVertexAttribArray(_positionSlot);
-	
-	_colorSlot = glGetAttribLocation(programHandle, "SourceColor");
+	_colorSlot = [_programHandle attributeIndex:@"SourceColor"];
 	glEnableVertexAttribArray(_colorSlot);
-	
-	_texCoordSlot = glGetAttribLocation(programHandle, "TexCoordIn");
+	_texCoordSlot = [_programHandle attributeIndex:@"TexCoordIn"];
 	glEnableVertexAttribArray(_texCoordSlot);
+	_textureUniform = [_programHandle uniformIndex:@"Texture"];
+	_modelViewUniformone = [_programHandle uniformIndex:@"Modelview"];
+	_textureUniformThree = [_programHandle uniformIndex:@"Texture1"];
+    [_programHandle use];
+
+
+	
+	 NSString *vertexShaderString1 = @"SimpleVertex";
+	 NSString *fragmentShaderString1 = @"SimpleFragment";
+
+	_programResult = [[GLProgram alloc]initWithVertexShaderFilename:vertexShaderString1 fragmentShaderFilename:fragmentShaderString1];
+	if (!_programResult.initialized)
+	{
+		[_programResult addAttribute:@"Position"];
+		[_programResult addAttribute:@"SourceColor"];
+		[_programResult addAttribute:@"TexCoordIn"];
+		
+		if (![_programResult link])
+		{
+			NSString *progLog = [_programResult programLog];
+			NSLog(@"Program link log: %@", progLog);
+			NSString *fragLog = [_programResult fragmentShaderLog];
+			NSLog(@"Fragment shader compile log: %@", fragLog);
+			NSString *vertLog = [_programResult vertexShaderLog];
+			NSLog(@"Vertex shader compile log: %@", vertLog);
+			_programResult = nil;
+			NSAssert(NO, @"Filter shader link failed");
+		}
+	}
+	_positionSlottwo = [_programResult attributeIndex:@"Position"];
+	glEnableVertexAttribArray(_positionSlottwo);
+	_colorSlottwo = [_programResult attributeIndex:@"SourceColor"];
+	glEnableVertexAttribArray(_colorSlottwo);
+	_texCoordSlottwo	= [_programResult attributeIndex:@"TexCoordIn"];
+	glEnableVertexAttribArray(_texCoordSlottwo);
+	_textureUniformtwo = [_programResult uniformIndex:@"Texture"];
+	_texSizeUniform = [_programResult uniformIndex:@"TexSize"];
+	_touchSizeUniform = [_programResult uniformIndex:@"TouchSize"];
+	_modelViewUniformone = [_programResult uniformIndex:@"Modelview"];
+	
+	[_programResult use];
 	
 
-	_modelViewUniform = glGetUniformLocation(programHandle, "Modelview");
-	_textureUniform = glGetUniformLocation(programHandle, "Texture");
-	_texSizeUniform = glGetUniformLocation(programHandle, "TexSize");
-	_touchSizeUniform = glGetUniformLocation(programHandle, "TouchSize");
-    
-	
 }
 
+
 - (void)setupDisplayLink {
-	CADisplayLink* displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(render:)];
-	[displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+//	CADisplayLink* displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(render:)];
+//	[displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
 }
 
 - (id)initWithFrame:(CGRect)frame
@@ -161,20 +175,29 @@ const GLubyte Indices[] = {0,1,2,3};
 		[self setupVBOs];
 		[self setupDisplayLink];
 		_floorTexture = [self setupTexture:@"qq.png"];
+		_fishTexture =[self setupTexture:@"item_powerup_fish.png"];
 		
 		
+		_fbo = [[GLFbo alloc] initWithSize:frame.size];
+	
 	}
 	return self;
 }
 
 - (void)setupVBOs {
  
-	GLuint vertexBuffer;
-	glGenBuffers(1, &vertexBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	
+	glGenBuffers(1, &_vertexBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
 	//  把Vertices数据传到GL_ARRAY_BUFFER
 	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
  
+	glGenBuffers(1, &_vertexBuffer2);
+	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer2);
+	//  把FVertices数据传到GL_ARRAY_BUFFER
+	glBufferData(GL_ARRAY_BUFFER, sizeof(FVertices), FVertices, GL_STATIC_DRAW);
+	
+	
 //	GLuint indexBuffer;
 //	glGenBuffers(1, &indexBuffer);
 //	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -221,16 +244,95 @@ const GLubyte Indices[] = {0,1,2,3};
 
 //  设置帧缓冲区 
 - (void)setupFrameBuffer {
-	GLuint framebuffer;
-	glGenFramebuffers(1, &framebuffer);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+	
+	glGenFramebuffers(1, &_framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
 	//  把前面的render buffer依附在frame buffer的GL_COLOR_ATTACHMENT0位置上
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 							  GL_RENDERBUFFER, _colorRenderBuffer);
+
 }
 
 - (void)render:(CADisplayLink*)displayLink {
-	glClearColor(0, 104.0/255.0, 55.0/255.0, 1.0);
+    
+	
+//	glClearColor(0, 104.0/255.0, 55.0/255.0, 1.0);
+//	glClear(GL_COLOR_BUFFER_BIT);
+ 
+	
+	GLKMatrix4 matrix = GLKMatrix4MakeOrtho(0,
+											self.frame.size.width,
+											0,
+											self.frame.size.height,
+											-1,
+											1);
+	
+	glViewport(0, 0, self.frame.size.width, self.frame.size.height);
+
+
+//	[_programResult use];
+//	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer2);
+//	[self.fbo useFBO];
+//	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
+//	glActiveTexture(GL_TEXTURE0);
+//	glBindTexture(GL_TEXTURE_2D, _floorTexture);
+//	glUniform1i(_textureUniform, 0);
+//	glUniform2f(_texSizeUniform, self.frame.size.width, self.frame.size.height);
+//	glVertexAttribPointer(_positionSlottwo, 2, GL_FLOAT, GL_FALSE,
+//        sizeof(Vertex), 0);
+//	glVertexAttribPointer(_colorSlottwo, 4, GL_FLOAT, GL_FALSE,
+//        sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
+//	glVertexAttribPointer(_texCoordSlottwo, 2, GL_FLOAT, GL_FALSE,
+//						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
+//	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
+	
+	
+//	[_programHandle use];
+//	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
+//	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+//	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
+//	glActiveTexture(GL_TEXTURE0);
+//	glBindTexture(GL_TEXTURE_2D, [self.fbo texture]);
+//	glUniform1i(_textureUniformtwo, 0);
+//	glActiveTexture(GL_TEXTURE1);
+//	glBindTexture(GL_TEXTURE_2D, _floorTexture);
+//	glUniform1i(_textureUniformThree, 1);
+//	glVertexAttribPointer(_positionSlot, 2, GL_FLOAT, GL_FALSE,
+//        sizeof(Vertex), 0);
+//	glVertexAttribPointer(_colorSlot, 4, GL_FLOAT, GL_FALSE,
+//        sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
+//	glVertexAttribPointer(_texCoordSlot, 2, GL_FLOAT, GL_FALSE,
+//						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
+//	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
+//	
+//	
+//	
+// 	[_context presentRenderbuffer:GL_RENDERBUFFER];
+	
+}
+
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+	UITouch *touch = [touches anyObject];
+	
+	CGPoint touchPoint = [touch locationInView:self];
+	
+	NSLog(@"%f==%f",touchPoint.x,touchPoint.y);
+
+	
+	
+	FVertices[0].Position[0] = touchPoint.x - 50;
+	FVertices[0].Position[1] = touchPoint.y - 50;
+	FVertices[1].Position[0] = touchPoint.x + 50;
+	FVertices[1].Position[1] = touchPoint.y - 50;
+	FVertices[2].Position[0] = touchPoint.x - 50;
+	FVertices[2].Position[1] = touchPoint.y + 50;
+	FVertices[3].Position[0] = touchPoint.x + 50;
+	FVertices[3].Position[1] = touchPoint.y + 50;
+	
+	
+	
+	glClearColor(0,0.0/255.0, 55.0/255.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT);
  
 	
@@ -240,55 +342,52 @@ const GLubyte Indices[] = {0,1,2,3};
 											self.frame.size.height,
 											-1,
 											1);
-	_currentRotation += displayLink.duration ;
-
-//	matrix = GLKMatrix4Rotate(matrix, _currentRotation, 0, 0, 1);
-
 	
-	
-	//	CC3GLMatrix *modelView = [CC3GLMatrix matrix];
-//	[modelView populateFromTranslation:CC3VectorMake(0, 0, 0)];
-//	_currentRotation += displayLink.duration * 90;
-//	[modelView rotateBy:CC3VectorMake(0,  0, _currentRotation)];
-	glUniformMatrix4fv(_modelViewUniform, 1, 0, matrix.m);
-	
-	
-	// 1
 	glViewport(0, 0, self.frame.size.width, self.frame.size.height);
- 
-	// 2
-	glVertexAttribPointer(_positionSlot, 2, GL_FLOAT, GL_FALSE,
-        sizeof(Vertex), 0);
-	glVertexAttribPointer(_colorSlot, 4, GL_FLOAT, GL_FALSE,
-        sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
- 
-	glVertexAttribPointer(_texCoordSlot, 2, GL_FLOAT, GL_FALSE,
-						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
+	
+		
+	
+	[_programResult use];
+	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer2);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(FVertices), FVertices);
+	
+	[self.fbo useFBO];
+	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _floorTexture);
 	glUniform1i(_textureUniform, 0);
 	glUniform2f(_texSizeUniform, self.frame.size.width, self.frame.size.height);
-	
-	// 3
-	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
-//	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
- 
-	[_context presentRenderbuffer:GL_RENDERBUFFER];
-}
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
-
-{
-	
-	UITouch *touch = [touches anyObject];
-	
-	CGPoint touchPoint = [touch locationInView:self];
-	
-	NSLog(@"%f==%f",touchPoint.x,touchPoint.y);
-	
 	glUniform2f(_touchSizeUniform, touchPoint.x, touchPoint.y);
+	glVertexAttribPointer(_positionSlottwo, 2, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex), 0);
+	glVertexAttribPointer(_colorSlottwo, 4, GL_FLOAT, GL_FALSE,
+        sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
+	glVertexAttribPointer(_texCoordSlottwo, 2, GL_FLOAT, GL_FALSE,
+						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
+	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
+	
+	[_programHandle use];
+	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
+	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, [self.fbo texture]);
+	glUniform1i(_textureUniformtwo, 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, _floorTexture);
+	glUniform1i(_textureUniformThree, 1);
+	glVertexAttribPointer(_positionSlot, 2, GL_FLOAT, GL_FALSE,
+	        sizeof(Vertex), 0);
+	glVertexAttribPointer(_colorSlot, 4, GL_FLOAT, GL_FALSE,
+	        sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
+	glVertexAttribPointer(_texCoordSlot, 2, GL_FLOAT, GL_FALSE,
+							  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
+	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
 	
 	
 	
+	[_context presentRenderbuffer:GL_RENDERBUFFER];
+
 }
 
 @end

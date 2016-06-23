@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A12C62681D1A5DAE001147AA /* GLFbo.m in Sources */ = {isa = PBXBuildFile; fileRef = A12C62671D1A5DAE001147AA /* GLFbo.m */; };
+		A12C626C1D1A64F8001147AA /* GLProgram.m in Sources */ = {isa = PBXBuildFile; fileRef = A12C626B1D1A64F8001147AA /* GLProgram.m */; };
+		A12C626E1D1A6C6E001147AA /* SimpleFragment.fsh in Resources */ = {isa = PBXBuildFile; fileRef = A12C626D1D1A6C6E001147AA /* SimpleFragment.fsh */; };
+		A12C62701D1A7A50001147AA /* SimpleVertex.vsh in Resources */ = {isa = PBXBuildFile; fileRef = A12C626F1D1A7A50001147AA /* SimpleVertex.vsh */; };
 		A16B93DA1D16DA3200185F71 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = A16B93D91D16DA3200185F71 /* main.m */; };
 		A16B93DD1D16DA3200185F71 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = A16B93DC1D16DA3200185F71 /* AppDelegate.m */; };
 		A16B93E01D16DA3200185F71 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = A16B93DF1D16DA3200185F71 /* ViewController.m */; };
@@ -18,8 +22,8 @@
 		A16B940C1D16DB5600185F71 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A16B940B1D16DB5600185F71 /* QuartzCore.framework */; };
 		A16B940E1D16DB6700185F71 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A16B940D1D16DB6700185F71 /* OpenGLES.framework */; };
 		A16B94111D16DB9D00185F71 /* OpenGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = A16B94101D16DB9D00185F71 /* OpenGLView.m */; };
-		A16B94131D1785F800185F71 /* SimpleVertex.glsl in Resources */ = {isa = PBXBuildFile; fileRef = A16B94121D1785F800185F71 /* SimpleVertex.glsl */; };
-		A16B94151D1797D600185F71 /* SimpleFragment.glsl in Resources */ = {isa = PBXBuildFile; fileRef = A16B94141D1797D600185F71 /* SimpleFragment.glsl */; };
+		A16B94131D1785F800185F71 /* MixVertex.vsh in Resources */ = {isa = PBXBuildFile; fileRef = A16B94121D1785F800185F71 /* MixVertex.vsh */; };
+		A16B94151D1797D600185F71 /* MixFragment.fsh in Resources */ = {isa = PBXBuildFile; fileRef = A16B94141D1797D600185F71 /* MixFragment.fsh */; };
 		A1AF1B031D17F01400184BF5 /* CC3Foundation.m in Sources */ = {isa = PBXBuildFile; fileRef = A1AF1AFA1D17F01400184BF5 /* CC3Foundation.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		A1AF1B041D17F01400184BF5 /* CC3GLMatrix.m in Sources */ = {isa = PBXBuildFile; fileRef = A1AF1AFC1D17F01400184BF5 /* CC3GLMatrix.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		A1AF1B051D17F01400184BF5 /* CC3Kazmath.c in Sources */ = {isa = PBXBuildFile; fileRef = A1AF1AFD1D17F01400184BF5 /* CC3Kazmath.c */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
@@ -47,6 +51,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		A12C62661D1A5DAE001147AA /* GLFbo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLFbo.h; sourceTree = "<group>"; };
+		A12C62671D1A5DAE001147AA /* GLFbo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GLFbo.m; sourceTree = "<group>"; };
+		A12C626A1D1A64F8001147AA /* GLProgram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLProgram.h; sourceTree = "<group>"; };
+		A12C626B1D1A64F8001147AA /* GLProgram.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GLProgram.m; sourceTree = "<group>"; };
+		A12C626D1D1A6C6E001147AA /* SimpleFragment.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = SimpleFragment.fsh; sourceTree = "<group>"; };
+		A12C626F1D1A7A50001147AA /* SimpleVertex.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; path = SimpleVertex.vsh; sourceTree = "<group>"; };
 		A16B93D51D16DA3200185F71 /* OpenGL002.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenGL002.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A16B93D91D16DA3200185F71 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		A16B93DB1D16DA3200185F71 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -67,8 +77,8 @@
 		A16B940D1D16DB6700185F71 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		A16B940F1D16DB9D00185F71 /* OpenGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenGLView.h; sourceTree = "<group>"; };
 		A16B94101D16DB9D00185F71 /* OpenGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = OpenGLView.m; sourceTree = "<group>"; };
-		A16B94121D1785F800185F71 /* SimpleVertex.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = SimpleVertex.glsl; path = ../SimpleVertex.glsl; sourceTree = "<group>"; };
-		A16B94141D1797D600185F71 /* SimpleFragment.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = SimpleFragment.glsl; path = ../SimpleFragment.glsl; sourceTree = "<group>"; };
+		A16B94121D1785F800185F71 /* MixVertex.vsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = MixVertex.vsh; path = ../MixVertex.vsh; sourceTree = "<group>"; };
+		A16B94141D1797D600185F71 /* MixFragment.fsh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.glsl; name = MixFragment.fsh; path = ../MixFragment.fsh; sourceTree = "<group>"; };
 		A1AF1AF91D17F01400184BF5 /* CC3Foundation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CC3Foundation.h; sourceTree = "<group>"; };
 		A1AF1AFA1D17F01400184BF5 /* CC3Foundation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = CC3Foundation.m; sourceTree = "<group>"; };
 		A1AF1AFB1D17F01400184BF5 /* CC3GLMatrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CC3GLMatrix.h; sourceTree = "<group>"; };
@@ -139,9 +149,15 @@
 				A1AF1B191D18E95500184BF5 /* qq.png */,
 				A1AF1B081D18183600184BF5 /* tile_floor.png */,
 				A1AF1B071D18183600184BF5 /* item_powerup_fish.png */,
+				A12C626A1D1A64F8001147AA /* GLProgram.h */,
+				A12C626B1D1A64F8001147AA /* GLProgram.m */,
 				A1AF1AF81D17EFE600184BF5 /* Matrix */,
-				A16B94141D1797D600185F71 /* SimpleFragment.glsl */,
-				A16B94121D1785F800185F71 /* SimpleVertex.glsl */,
+				A12C62661D1A5DAE001147AA /* GLFbo.h */,
+				A12C62671D1A5DAE001147AA /* GLFbo.m */,
+				A12C626D1D1A6C6E001147AA /* SimpleFragment.fsh */,
+				A12C626F1D1A7A50001147AA /* SimpleVertex.vsh */,
+				A16B94141D1797D600185F71 /* MixFragment.fsh */,
+				A16B94121D1785F800185F71 /* MixVertex.vsh */,
 				A16B940F1D16DB9D00185F71 /* OpenGLView.h */,
 				A16B94101D16DB9D00185F71 /* OpenGLView.m */,
 				A16B93DE1D16DA3200185F71 /* ViewController.h */,
@@ -306,11 +322,13 @@
 			files = (
 				A1AF1B0A1D18183600184BF5 /* tile_floor.png in Resources */,
 				A16B93E81D16DA3200185F71 /* LaunchScreen.storyboard in Resources */,
-				A16B94131D1785F800185F71 /* SimpleVertex.glsl in Resources */,
+				A16B94131D1785F800185F71 /* MixVertex.vsh in Resources */,
 				A16B93E51D16DA3200185F71 /* Assets.xcassets in Resources */,
+				A12C62701D1A7A50001147AA /* SimpleVertex.vsh in Resources */,
 				A1AF1B1A1D18E95500184BF5 /* qq.png in Resources */,
 				A16B93E31D16DA3200185F71 /* Main.storyboard in Resources */,
-				A16B94151D1797D600185F71 /* SimpleFragment.glsl in Resources */,
+				A12C626E1D1A6C6E001147AA /* SimpleFragment.fsh in Resources */,
+				A16B94151D1797D600185F71 /* MixFragment.fsh in Resources */,
 				A1AF1B091D18183600184BF5 /* item_powerup_fish.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -336,12 +354,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A12C62681D1A5DAE001147AA /* GLFbo.m in Sources */,
 				A1AF1B051D17F01400184BF5 /* CC3Kazmath.c in Sources */,
 				A16B93E01D16DA3200185F71 /* ViewController.m in Sources */,
 				A16B93DD1D16DA3200185F71 /* AppDelegate.m in Sources */,
 				A16B93DA1D16DA3200185F71 /* main.m in Sources */,
 				A1AF1B031D17F01400184BF5 /* CC3Foundation.m in Sources */,
 				A16B94111D16DB9D00185F71 /* OpenGLView.m in Sources */,
+				A12C626C1D1A64F8001147AA /* GLProgram.m in Sources */,
 				A1AF1B041D17F01400184BF5 /* CC3GLMatrix.m in Sources */,
 				A1AF1B061D17F01400184BF5 /* CC3Math.m in Sources */,
 			);
