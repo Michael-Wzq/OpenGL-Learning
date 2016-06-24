@@ -7,5 +7,5 @@ void main(void) {
 	//修改的图
 	vec4 baseMap =  texture2D(Texture,TexCoordOut);
 	gl_FragColor = mix(overlapMap,baseMap,baseMap.a);
-
+	
 }

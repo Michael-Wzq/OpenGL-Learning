@@ -25,10 +25,10 @@ const Vertex Vertices[] = {
 	{  {kWIDTH, kHEIGHT}, {1, 1, 1, 1},   {1, 0}  }
 };
 static Vertex FVertices[] = {
-	{  {0, 0},            {1, 1, 1, 1},  {0, 0} },
+	{  {0, 0},            {1, 1, 1, 1},   {0, 0}   },
 	{  {kWIDTH, 0},       {1, 1, 1, 1},   {1, 0}   },
 	{  {0, kHEIGHT},      {1, 1, 1, 1},   {0, 1}   },
-	{  {kWIDTH, kHEIGHT}, {1, 1, 1, 1},   {1, 1}  }
+	{  {kWIDTH, kHEIGHT}, {1, 1, 1, 1},   {1, 1}   }
 };
 const GLubyte Indices[] = {0,1,2,3};
 
@@ -175,7 +175,7 @@ const GLubyte Indices[] = {0,1,2,3};
 		[self setupVBOs];
 		[self setupDisplayLink];
 		_floorTexture = [self setupTexture:@"qq.png"];
-		_fishTexture =[self setupTexture:@"item_powerup_fish.png"];
+	
 		
 		
 		_fbo = [[GLFbo alloc] initWithSize:frame.size];
@@ -254,73 +254,21 @@ const GLubyte Indices[] = {0,1,2,3};
 }
 
 - (void)render:(CADisplayLink*)displayLink {
-    
-	
-//	glClearColor(0, 104.0/255.0, 55.0/255.0, 1.0);
-//	glClear(GL_COLOR_BUFFER_BIT);
- 
-	
-	GLKMatrix4 matrix = GLKMatrix4MakeOrtho(0,
-											self.frame.size.width,
-											0,
-											self.frame.size.height,
-											-1,
-											1);
-	
-	glViewport(0, 0, self.frame.size.width, self.frame.size.height);
-
-
-//	[_programResult use];
-//	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer2);
-//	[self.fbo useFBO];
-//	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
-//	glActiveTexture(GL_TEXTURE0);
-//	glBindTexture(GL_TEXTURE_2D, _floorTexture);
-//	glUniform1i(_textureUniform, 0);
-//	glUniform2f(_texSizeUniform, self.frame.size.width, self.frame.size.height);
-//	glVertexAttribPointer(_positionSlottwo, 2, GL_FLOAT, GL_FALSE,
-//        sizeof(Vertex), 0);
-//	glVertexAttribPointer(_colorSlottwo, 4, GL_FLOAT, GL_FALSE,
-//        sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
-//	glVertexAttribPointer(_texCoordSlottwo, 2, GL_FLOAT, GL_FALSE,
-//						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
-//	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
-	
-	
-//	[_programHandle use];
-//	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
-//	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-//	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
-//	glActiveTexture(GL_TEXTURE0);
-//	glBindTexture(GL_TEXTURE_2D, [self.fbo texture]);
-//	glUniform1i(_textureUniformtwo, 0);
-//	glActiveTexture(GL_TEXTURE1);
-//	glBindTexture(GL_TEXTURE_2D, _floorTexture);
-//	glUniform1i(_textureUniformThree, 1);
-//	glVertexAttribPointer(_positionSlot, 2, GL_FLOAT, GL_FALSE,
-//        sizeof(Vertex), 0);
-//	glVertexAttribPointer(_colorSlot, 4, GL_FLOAT, GL_FALSE,
-//        sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
-//	glVertexAttribPointer(_texCoordSlot, 2, GL_FLOAT, GL_FALSE,
-//						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
-//	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
-//	
-//	
-//	
-// 	[_context presentRenderbuffer:GL_RENDERBUFFER];
 	
 }
 
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+//	glBlendFunc(GL_ONE, GL_ZERO);
+//	glEnable(GL_BLEND);
 	UITouch *touch = [touches anyObject];
 	
 	CGPoint touchPoint = [touch locationInView:self];
 	
 	NSLog(@"%f==%f",touchPoint.x,touchPoint.y);
 
-	
-	
+	[_programResult use];
+	glUniform2f(_touchSizeUniform, touchPoint.x, touchPoint.y);
 	FVertices[0].Position[0] = touchPoint.x - 50;
 	FVertices[0].Position[1] = touchPoint.y - 50;
 	FVertices[1].Position[0] = touchPoint.x + 50;
@@ -330,10 +278,19 @@ const GLubyte Indices[] = {0,1,2,3};
 	FVertices[3].Position[0] = touchPoint.x + 50;
 	FVertices[3].Position[1] = touchPoint.y + 50;
 	
+	FVertices[0].TexCoord[0] = (touchPoint.x - 50) / kWIDTH;
+	FVertices[0].TexCoord[1] = (touchPoint.y - 50) /kHEIGHT;
+	FVertices[1].TexCoord[0] = (touchPoint.x + 50)/ kWIDTH;
+	FVertices[1].TexCoord[1] = (touchPoint.y - 50)/kHEIGHT;
+	FVertices[2].TexCoord[0] = (touchPoint.x - 50)/ kWIDTH;
+	FVertices[2].TexCoord[1] = (touchPoint.y + 50)/kHEIGHT;
+	FVertices[3].TexCoord[0] = (touchPoint.x + 50)/ kWIDTH;
+	FVertices[3].TexCoord[1] = (touchPoint.y + 50)/kHEIGHT;
 	
 	
-	glClearColor(0,0.0/255.0, 55.0/255.0, 1.0);
+	glClearColor(1.0,1.0, 1.0, 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
+//	glClear(GL_COLOR_ATTACHMENT0);
  
 	
 	GLKMatrix4 matrix = GLKMatrix4MakeOrtho(0,
@@ -348,16 +305,15 @@ const GLubyte Indices[] = {0,1,2,3};
 		
 	
 	[_programResult use];
+	[self.fbo useFBO];
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer2);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(FVertices), FVertices);
-	
-	[self.fbo useFBO];
 	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _floorTexture);
 	glUniform1i(_textureUniform, 0);
 	glUniform2f(_texSizeUniform, self.frame.size.width, self.frame.size.height);
-	glUniform2f(_touchSizeUniform, touchPoint.x, touchPoint.y);
+	
 	glVertexAttribPointer(_positionSlottwo, 2, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), 0);
 	glVertexAttribPointer(_colorSlottwo, 4, GL_FLOAT, GL_FALSE,

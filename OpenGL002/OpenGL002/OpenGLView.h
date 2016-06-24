@@ -14,40 +14,40 @@
 #import "GLProgram.h"
 
 @interface OpenGLView : UIView {
-	GLuint _filterProgram;
+
 	CAEAGLLayer* _eaglLayer;
 	EAGLContext* _context;
+	
+	GLProgram *_programHandle;
+	GLProgram *_programResult;
+	
 	GLuint _colorRenderBuffer;
 	GLuint _floorTexture;
-	GLuint _fishTexture;
+
+	GLuint _indexBuffer;
+	GLuint _framebuffer;
+	GLuint _vertexBuffer;
 	GLuint _positionSlot;
 	GLuint _colorSlot;
 	GLuint _texCoordSlot;
+	GLuint _modelViewUniformone; //正交矩阵
+	GLuint _texSizeUniform;
+	GLuint _textureUniform;
 	
+	
+	GLuint _vertexBuffer2;
 	GLuint _positionSlottwo;
 	GLuint _colorSlottwo;
 	GLuint _texCoordSlottwo;
 	GLuint _textureUniformtwo;
 	GLuint _textureUniformThree;
-	
-	
-	float _currentRotation;
-	GLuint _modelViewUniformone;
-	GLuint _texSizeUniform;
-	
-	GLuint _vertexBuffer;
-	GLuint _indexBuffer;
-	GLuint _vertexBuffer2;
-	GLuint _indexBuffer2;
-
-	
-	GLuint _textureUniform;
 	GLuint _touchSizeUniform;
 	
-	GLuint _framebuffer;
+	float _currentRotation;
 	
-	GLProgram *_programHandle;
-	GLProgram *_programResult;
+	
+
+
 }
 
 
