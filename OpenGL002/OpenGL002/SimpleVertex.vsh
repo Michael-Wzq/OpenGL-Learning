@@ -6,8 +6,8 @@ varying vec2 TexCoordOut;
 uniform mat4 Modelview;
 void main(void) {
 	DestinationColor = SourceColor;
-	
-	gl_Position =    Modelview * Position;
-	
+	vec4 temp = Modelview * Position;
+	gl_Position =   temp;
 	TexCoordOut = TexCoordIn;
+
 }

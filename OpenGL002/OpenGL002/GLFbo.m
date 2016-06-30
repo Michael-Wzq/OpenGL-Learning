@@ -113,6 +113,7 @@
 - (void)useFBO
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _frameBuffer);
+	glViewport(0, 0, (int)self.fboSize.width, (int)self.fboSize.height);
 }
 
 - (id)debugQuickLookObject

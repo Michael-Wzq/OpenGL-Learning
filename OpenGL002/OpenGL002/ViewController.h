@@ -11,6 +11,6 @@
 @interface ViewController : UIViewController
 
 @property (nonatomic, weak) IBOutlet OpenGLView *glView;
-
+@property (nonatomic, weak) IBOutlet UISlider *slider;
 @end
 

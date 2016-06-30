@@ -10,31 +10,24 @@
 #import "CC3GLMatrix.h"
 #import <GLKit/GLKit.h>
 
-const CGFloat kHEIGHT = 568;
-const CGFloat kWIDTH  = 320;
+
 typedef struct {
 	float Position[2];
 	float Color[4];
 	float TexCoord[2];
 } Vertex;
+Vertex Vertices[];
+Vertex FVertices[];
 
-const Vertex Vertices[] = {
-	{  {0, 0},            {1, 1, 1, 1},   {0, 1}  },
-	{  {kWIDTH, 0},       {1, 1, 1, 1},   {1, 1}  },
-	{  {0, kHEIGHT},      {1, 1, 1, 1},   {0, 0}  },
-	{  {kWIDTH, kHEIGHT}, {1, 1, 1, 1},   {1, 0}  }
-};
-static Vertex FVertices[] = {
-	{  {0, 0},            {1, 1, 1, 1},   {0, 0}   },
-	{  {kWIDTH, 0},       {1, 1, 1, 1},   {1, 0}   },
-	{  {0, kHEIGHT},      {1, 1, 1, 1},   {0, 1}   },
-	{  {kWIDTH, kHEIGHT}, {1, 1, 1, 1},   {1, 1}   }
-};
 const GLubyte Indices[] = {0,1,2,3};
 
 @interface OpenGLView ()
 @property (nonatomic, strong) GLFbo *fbo;
-@property (nonatomic, assign) BOOL isFirst;
+@property (nonatomic, assign) CGFloat proportion;
+@property (nonatomic, assign) CGFloat imageWidth;
+@property (nonatomic, assign) CGFloat imageHeight;
+@property (nonatomic, assign) CGFloat glViewWidth;
+@property (nonatomic, assign) CGFloat glViewHeight;
 @end
 
 
@@ -46,11 +39,9 @@ const GLubyte Indices[] = {0,1,2,3};
 		exit(1);
 	}
 	
-	size_t width = CGImageGetWidth(spriteImage);
-	size_t height = CGImageGetHeight(spriteImage);
-	
-	
-	
+	size_t width = _imageWidth;
+	size_t height = _imageHeight;
+
 	//  red，green，blue和alpha通道，每一个通道准备一个字节，所以就要乘以4
 	GLubyte *spriteData = (GLubyte *) calloc(width*height*4, sizeof(GLubyte));
 	
@@ -58,8 +49,10 @@ const GLubyte Indices[] = {0,1,2,3};
 
 	//  每个通道8比特 一个字节
 	CGContextRef spriteContext = CGBitmapContextCreate(spriteData, width, height, 8, width*4, spriteColor, kCGImageAlphaPremultipliedLast);
+
+	CGContextDrawImage(spriteContext, CGRectMake( 0, 0, width, height),spriteImage);
 	
-	CGContextDrawImage(spriteContext, CGRectMake(0, 0, width, height), spriteImage);
+	
 	CGContextRelease(spriteContext);
 	
 	GLuint texName;
@@ -77,10 +70,6 @@ const GLubyte Indices[] = {0,1,2,3};
 	return texName;
 	
 }
-
-
-
-
 
 - (void)compileShaders {
  	 NSString *vertexShaderString = @"MixVertex";
@@ -150,39 +139,139 @@ const GLubyte Indices[] = {0,1,2,3};
 	_texSizeUniform = [_programResult uniformIndex:@"TexSize"];
 	_touchSizeUniform = [_programResult uniformIndex:@"TouchSize"];
 	_modelViewUniformone = [_programResult uniformIndex:@"Modelview"];
-	
+	_touchPointUniform = [_programResult uniformIndex:@"TouchPoint"];
 	[_programResult use];
 	
 
 }
 
-
-- (void)setupDisplayLink {
-//	CADisplayLink* displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(render:)];
-//	[displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-}
-
-- (id)initWithFrame:(CGRect)frame
+- (id)initWithFrame:(CGRect)frame type:(NSInteger)type
 {
 	self = [super initWithFrame:frame];
 	if (self) {
-		
+		_picType = type;
+		_glViewWidth = self.frame.size.width;
+		_glViewHeight = self.frame.size.height;
+		[self setupValue:@"aaa.jpg"];
 		[self setupLayer];
 		[self setupContext];
 		[self setupRenderBuffer];
 		[self setupFrameBuffer];
 		[self compileShaders];
 		[self setupVBOs];
-		[self setupDisplayLink];
-		_floorTexture = [self setupTexture:@"qq.png"];
+		_floorTexture = [self setupTexture:@"aaa.jpg"];
+		_fbo = [[GLFbo alloc] initWithSize:CGSizeMake(_imageWidth, _imageHeight)];
 	
-		
-		
-		_fbo = [[GLFbo alloc] initWithSize:frame.size];
-	
+		[self touchesBegan:nil withEvent:nil];
 	}
 	return self;
 }
+
+- (void)setupValue:(NSString *)fileName {
+	CGFloat midWidth;
+	CGFloat midHeight;
+	CGImageRef spriteImage = [UIImage imageNamed:fileName].CGImage;
+	if (!spriteImage) {
+		NSLog(@"Failed to load image %@", fileName);
+		exit(1);
+	}
+	size_t width = CGImageGetWidth(spriteImage);
+	size_t height = CGImageGetHeight(spriteImage);
+	
+	switch (_picType) {
+		case 0:
+			_imageHeight = height;
+			_imageWidth = width;
+			_proportion = _imageHeight / _glViewHeight ;
+			_imageWidth = _imageWidth / _proportion;
+			_imageHeight = self.frame.size.height;
+			if (_imageWidth > _glViewWidth) {
+				midWidth = -(_imageWidth - _glViewWidth)/2;
+			}else {
+				midWidth = (_glViewWidth-_imageWidth)/2;
+			}
+			Vertices[0].Position[0] = midWidth;
+			Vertices[0].Position[1] = 0;
+			Vertices[1].Position[0] = midWidth+_imageWidth;
+			Vertices[1].Position[1] = 0;
+			Vertices[2].Position[0] = midWidth;
+			Vertices[2].Position[1] = _imageHeight;
+			Vertices[3].Position[0] = midWidth +_imageWidth;
+			Vertices[3].Position[1] = _imageHeight;
+			
+			Vertices[0].TexCoord[0] = 0;
+			Vertices[0].TexCoord[1] = 1;
+			Vertices[1].TexCoord[0] = 1;
+			Vertices[1].TexCoord[1] = 1;
+			Vertices[2].TexCoord[0] = 0;
+			Vertices[2].TexCoord[1] = 0;
+			Vertices[3].TexCoord[0] = 1;
+			Vertices[3].TexCoord[1] = 0;
+			break;
+		case 1:
+			_imageHeight = _glViewHeight;
+			_imageWidth	 = _glViewWidth;
+			Vertices[0].Position[0] = 0;
+			Vertices[0].Position[1] = 0;
+			Vertices[1].Position[0] = _imageWidth;
+			Vertices[1].Position[1] = 0;
+			Vertices[2].Position[0] = 0;
+			Vertices[2].Position[1] = _imageHeight;
+			Vertices[3].Position[0] = _imageWidth;
+			Vertices[3].Position[1] = _imageHeight;
+			
+			Vertices[0].TexCoord[0] = 0;
+			Vertices[0].TexCoord[1] = 1;
+			Vertices[1].TexCoord[0] = 1;
+			Vertices[1].TexCoord[1] = 1;
+			Vertices[2].TexCoord[0] = 0;
+			Vertices[2].TexCoord[1] = 0;
+			Vertices[3].TexCoord[0] = 1;
+			Vertices[3].TexCoord[1] = 0;
+			break;
+		case 2:
+			_imageHeight = height;
+			_imageWidth = width;
+			_proportion = _imageWidth / _glViewWidth ;
+			_imageHeight = _imageHeight / _proportion;
+			_imageWidth = _glViewWidth;
+			if (_imageHeight > _glViewHeight) {
+				midHeight = -(_imageHeight - _glViewHeight)/2;
+			}else {
+				midHeight = (_glViewHeight-_imageHeight)/2;
+			}
+			Vertices[0].Position[0] = 0;
+			Vertices[0].Position[1] = midHeight;
+			Vertices[1].Position[0] = _imageWidth;
+			Vertices[1].Position[1] = midHeight;
+			Vertices[2].Position[0] = 0;
+			Vertices[2].Position[1] = midHeight + _imageHeight;
+			Vertices[3].Position[0] = _imageWidth;
+			Vertices[3].Position[1] = midHeight + _imageHeight;
+			
+			Vertices[0].TexCoord[0] = 0;
+			Vertices[0].TexCoord[1] = 1;
+			Vertices[1].TexCoord[0] = 1;
+			Vertices[1].TexCoord[1] = 1;
+			Vertices[2].TexCoord[0] = 0;
+			Vertices[2].TexCoord[1] = 0;
+			Vertices[3].TexCoord[0] = 1;
+			Vertices[3].TexCoord[1] = 0;
+			break;
+			
+			
+ 
+		default:
+			break;
+	}
+	
+	
+	
+}
+
+
+
+
 
 - (void)setupVBOs {
  
@@ -190,19 +279,12 @@ const GLubyte Indices[] = {0,1,2,3};
 	glGenBuffers(1, &_vertexBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
 	//  把Vertices数据传到GL_ARRAY_BUFFER
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertices), Vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, ((2+4+2) * 4 * 4 ), Vertices, GL_STATIC_DRAW);
  
 	glGenBuffers(1, &_vertexBuffer2);
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer2);
 	//  把FVertices数据传到GL_ARRAY_BUFFER
-	glBufferData(GL_ARRAY_BUFFER, sizeof(FVertices), FVertices, GL_STATIC_DRAW);
-	
-	
-//	GLuint indexBuffer;
-//	glGenBuffers(1, &indexBuffer);
-//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(Indices), Indices, GL_STATIC_DRAW);
- 
+	glBufferData(GL_ARRAY_BUFFER,  ((2+4+2) * 4 * 4 ), FVertices, GL_STATIC_DRAW);
 }
 
 - (void)dealloc
@@ -253,67 +335,55 @@ const GLubyte Indices[] = {0,1,2,3};
 
 }
 
-- (void)render:(CADisplayLink*)displayLink {
-	
-}
 
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
-//	glBlendFunc(GL_ONE, GL_ZERO);
-//	glEnable(GL_BLEND);
+	[self touchesMoved:touches withEvent:nil];
+}
+
+
+
+
+
+- (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
 	UITouch *touch = [touches anyObject];
-	
 	CGPoint touchPoint = [touch locationInView:self];
 	
-	NSLog(@"%f==%f",touchPoint.x,touchPoint.y);
 
-	[_programResult use];
-	glUniform2f(_touchSizeUniform, touchPoint.x, touchPoint.y);
-	FVertices[0].Position[0] = touchPoint.x - 50;
-	FVertices[0].Position[1] = touchPoint.y - 50;
-	FVertices[1].Position[0] = touchPoint.x + 50;
-	FVertices[1].Position[1] = touchPoint.y - 50;
-	FVertices[2].Position[0] = touchPoint.x - 50;
-	FVertices[2].Position[1] = touchPoint.y + 50;
-	FVertices[3].Position[0] = touchPoint.x + 50;
-	FVertices[3].Position[1] = touchPoint.y + 50;
 	
-	FVertices[0].TexCoord[0] = (touchPoint.x - 50) / kWIDTH;
-	FVertices[0].TexCoord[1] = (touchPoint.y - 50) /kHEIGHT;
-	FVertices[1].TexCoord[0] = (touchPoint.x + 50)/ kWIDTH;
-	FVertices[1].TexCoord[1] = (touchPoint.y - 50)/kHEIGHT;
-	FVertices[2].TexCoord[0] = (touchPoint.x - 50)/ kWIDTH;
-	FVertices[2].TexCoord[1] = (touchPoint.y + 50)/kHEIGHT;
-	FVertices[3].TexCoord[0] = (touchPoint.x + 50)/ kWIDTH;
-	FVertices[3].TexCoord[1] = (touchPoint.y + 50)/kHEIGHT;
-	
-	
-	glClearColor(1.0,1.0, 1.0, 0.0);
-	glClear(GL_COLOR_BUFFER_BIT);
-//	glClear(GL_COLOR_ATTACHMENT0);
- 
-	
-	GLKMatrix4 matrix = GLKMatrix4MakeOrtho(0,
-											self.frame.size.width,
-											0,
-											self.frame.size.height,
-											-1,
-											1);
-	
-	glViewport(0, 0, self.frame.size.width, self.frame.size.height);
-	
-		
-	
+	switch (_picType) {
+		case 0:
+			[self lashenWithPoint:touchPoint];
+			break;
+		case 1:
+			[self pingpuWithPoint:touchPoint];
+			break;
+		case 2:
+			[self juzhongWithPoint:touchPoint];
+			break;
+		default:
+			break;
+	}
+
+	GLKMatrix4 matrix;
+	matrix = GLKMatrix4MakeOrtho(0,
+								 _imageWidth,
+								 0,
+								 _imageHeight,
+								 -1,
+								 1);
 	[_programResult use];
 	[self.fbo useFBO];
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer2);
-	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(FVertices), FVertices);
+	glBufferSubData(GL_ARRAY_BUFFER, 0,  ((2+4+2) * 4 * 4 ), FVertices);
 	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _floorTexture);
 	glUniform1i(_textureUniform, 0);
-	glUniform2f(_texSizeUniform, self.frame.size.width, self.frame.size.height);
-	
+	glUniform2f(_texSizeUniform, _imageWidth, _imageHeight);
+//	glUniform2f(_touchPointUniform, touchPoint.x/_imageWidth, touchPoint.y/_imageHeight);
+//	NSLog(@"%f %f",touchPoint.x,touchPoint.y);
+//	NSLog(@"%f %f",touchPoint.x/_imageWidth,touchPoint.y/_imageHeight);
 	glVertexAttribPointer(_positionSlottwo, 2, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), 0);
 	glVertexAttribPointer(_colorSlottwo, 4, GL_FLOAT, GL_FALSE,
@@ -322,6 +392,15 @@ const GLubyte Indices[] = {0,1,2,3};
 						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
 	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
 	
+	
+	
+	matrix = GLKMatrix4MakeOrtho(0,
+								_glViewWidth,
+								 0,
+								_glViewHeight,
+								 -1,
+								 1);
+	glViewport(0, 0, _glViewWidth, _glViewHeight);
 	[_programHandle use];
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
@@ -333,17 +412,81 @@ const GLubyte Indices[] = {0,1,2,3};
 	glBindTexture(GL_TEXTURE_2D, _floorTexture);
 	glUniform1i(_textureUniformThree, 1);
 	glVertexAttribPointer(_positionSlot, 2, GL_FLOAT, GL_FALSE,
-	        sizeof(Vertex), 0);
+						  sizeof(Vertex), 0);
 	glVertexAttribPointer(_colorSlot, 4, GL_FLOAT, GL_FALSE,
-	        sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
+						  sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
 	glVertexAttribPointer(_texCoordSlot, 2, GL_FLOAT, GL_FALSE,
-							  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
+						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
 	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
 	
 	
 	
 	[_context presentRenderbuffer:GL_RENDERBUFFER];
-
+}
+- (void)lashenWithPoint:(CGPoint)touchPoint {
+	CGFloat midWidth;
+	CGFloat midHeight;
+	midWidth = (_imageWidth - _glViewWidth)/2;
+	midHeight = 0;
+	FVertices[0].Position[0] = midWidth + touchPoint.x - _mosaicRadius;
+	FVertices[0].Position[1] =   touchPoint.y - _mosaicRadius;
+	FVertices[1].Position[0] = midWidth +  touchPoint.x + _mosaicRadius;
+	FVertices[1].Position[1] =   touchPoint.y - _mosaicRadius;
+	FVertices[2].Position[0] = midWidth +  touchPoint.x - _mosaicRadius;
+	FVertices[2].Position[1] =   touchPoint.y + _mosaicRadius;
+	FVertices[3].Position[0] = midWidth +   touchPoint.x + _mosaicRadius;
+	FVertices[3].Position[1] =   touchPoint.y + _mosaicRadius;
+	
+	FVertices[0].TexCoord[0] = (midWidth  + touchPoint.x - _mosaicRadius) / (_imageWidth);
+	FVertices[0].TexCoord[1] = (touchPoint.y - _mosaicRadius) / (_imageHeight);
+	FVertices[1].TexCoord[0] = (midWidth  + touchPoint.x + _mosaicRadius) / (_imageWidth);
+	FVertices[1].TexCoord[1] = (touchPoint.y - _mosaicRadius) / (_imageHeight);
+	FVertices[2].TexCoord[0] = (midWidth  + touchPoint.x - _mosaicRadius) / (_imageWidth);
+	FVertices[2].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
+	FVertices[3].TexCoord[0] = (midWidth  + touchPoint.x + _mosaicRadius) / (_imageWidth);
+	FVertices[3].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
 }
 
+- (void)pingpuWithPoint:(CGPoint)touchPoint {
+	
+	FVertices[0].Position[0] =  touchPoint.x - _mosaicRadius;
+	FVertices[0].Position[1] =  touchPoint.y - _mosaicRadius;
+	FVertices[1].Position[0] =  touchPoint.x + _mosaicRadius;
+	FVertices[1].Position[1] =  touchPoint.y - _mosaicRadius;
+	FVertices[2].Position[0] =  touchPoint.x - _mosaicRadius;
+	FVertices[2].Position[1] =  touchPoint.y + _mosaicRadius;
+	FVertices[3].Position[0] =  touchPoint.x + _mosaicRadius;
+	FVertices[3].Position[1] =  touchPoint.y + _mosaicRadius;
+	
+	FVertices[0].TexCoord[0] = (touchPoint.x - _mosaicRadius) / (_imageWidth);
+	FVertices[0].TexCoord[1] = (touchPoint.y - _mosaicRadius) / (_imageHeight);
+	FVertices[1].TexCoord[0] = (touchPoint.x + _mosaicRadius) / (_imageWidth);
+	FVertices[1].TexCoord[1] = (touchPoint.y - _mosaicRadius) / (_imageHeight);
+	FVertices[2].TexCoord[0] = (touchPoint.x - _mosaicRadius) / (_imageWidth);
+	FVertices[2].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
+	FVertices[3].TexCoord[0] = (touchPoint.x + _mosaicRadius) / (_imageWidth);
+	FVertices[3].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
+}
+- (void)juzhongWithPoint:(CGPoint)touchPoint {
+	CGFloat midHeight;
+	midHeight = (_imageHeight - _glViewHeight)/2;
+	
+	FVertices[0].Position[0] = touchPoint.x - _mosaicRadius;
+	FVertices[0].Position[1] =   midHeight + touchPoint.y - _mosaicRadius;
+	FVertices[1].Position[0] =  touchPoint.x + _mosaicRadius;
+	FVertices[1].Position[1] =  midHeight +  touchPoint.y - _mosaicRadius;
+	FVertices[2].Position[0] =   touchPoint.x - _mosaicRadius;
+	FVertices[2].Position[1] = midHeight +  touchPoint.y + _mosaicRadius;
+	FVertices[3].Position[0] =   touchPoint.x + _mosaicRadius;
+	FVertices[3].Position[1] =  midHeight +  touchPoint.y + _mosaicRadius;
+	
+	FVertices[0].TexCoord[0] = ( touchPoint.x - _mosaicRadius) / (_imageWidth);
+	FVertices[0].TexCoord[1] = (midHeight  +touchPoint.y - _mosaicRadius) / (_imageHeight);
+	FVertices[1].TexCoord[0] = (touchPoint.x + _mosaicRadius) / (_imageWidth);
+	FVertices[1].TexCoord[1] = (midHeight  + touchPoint.y - _mosaicRadius) / (_imageHeight);
+	FVertices[2].TexCoord[0] = ( touchPoint.x - _mosaicRadius) / (_imageWidth);
+	FVertices[2].TexCoord[1] = (midHeight  +touchPoint.y + _mosaicRadius) / (_imageHeight);
+	FVertices[3].TexCoord[0] = ( touchPoint.x + _mosaicRadius) / (_imageWidth);
+	FVertices[3].TexCoord[1] = (midHeight  +touchPoint.y + _mosaicRadius) / (_imageHeight);
+}
 @end

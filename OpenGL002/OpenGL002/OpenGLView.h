@@ -45,10 +45,16 @@
 	
 	float _currentRotation;
 	
+	CGPoint _touchPoint;
+	CGPoint _movePoint;
+	
+	GLuint _touchPointUniform;
 	
 
-
 }
+- (id)initWithFrame:(CGRect)frame type:(NSInteger)type;
+@property (nonatomic, assign) NSInteger picType;
+@property (nonatomic, assign) CGFloat mosaicRadius;
 
 
 @end
