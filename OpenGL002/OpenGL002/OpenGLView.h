@@ -49,7 +49,7 @@
 	CGPoint _movePoint;
 	
 	GLuint _touchPointUniform;
-	
+	GLuint _mosaicSizeUniform;
 
 }
 - (id)initWithFrame:(CGRect)frame type:(NSInteger)type;

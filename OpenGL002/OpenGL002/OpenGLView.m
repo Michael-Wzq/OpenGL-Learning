@@ -28,6 +28,8 @@ const GLubyte Indices[] = {0,1,2,3};
 @property (nonatomic, assign) CGFloat imageHeight;
 @property (nonatomic, assign) CGFloat glViewWidth;
 @property (nonatomic, assign) CGFloat glViewHeight;
+@property (nonatomic, assign) CGFloat touchx;
+@property (nonatomic, assign) CGFloat touchy;
 @end
 
 
@@ -140,6 +142,7 @@ const GLubyte Indices[] = {0,1,2,3};
 	_touchSizeUniform = [_programResult uniformIndex:@"TouchSize"];
 	_modelViewUniformone = [_programResult uniformIndex:@"Modelview"];
 	_touchPointUniform = [_programResult uniformIndex:@"TouchPoint"];
+	_mosaicSizeUniform = [_programResult uniformIndex:@"MosaicRadius"];
 	[_programResult use];
 	
 
@@ -349,7 +352,6 @@ const GLubyte Indices[] = {0,1,2,3};
 	UITouch *touch = [touches anyObject];
 	CGPoint touchPoint = [touch locationInView:self];
 	
-
 	
 	switch (_picType) {
 		case 0:
@@ -381,9 +383,16 @@ const GLubyte Indices[] = {0,1,2,3};
 	glBindTexture(GL_TEXTURE_2D, _floorTexture);
 	glUniform1i(_textureUniform, 0);
 	glUniform2f(_texSizeUniform, _imageWidth, _imageHeight);
-//	glUniform2f(_touchPointUniform, touchPoint.x/_imageWidth, touchPoint.y/_imageHeight);
-//	NSLog(@"%f %f",touchPoint.x,touchPoint.y);
-//	NSLog(@"%f %f",touchPoint.x/_imageWidth,touchPoint.y/_imageHeight);
+	
+	
+	glUniform1f(_mosaicSizeUniform, _mosaicRadius/2.0);
+	NSLog(@"%f",_mosaicRadius/2.0);
+	
+	glUniform2f(_touchPointUniform, _touchx,_touchy);
+	NSLog(@"%f %f",_touchx,_touchy);
+	NSLog(@"%f %f",_touchx/_imageWidth,_touchy/_imageHeight);
+	
+	
 	glVertexAttribPointer(_positionSlottwo, 2, GL_FLOAT, GL_FALSE,
         sizeof(Vertex), 0);
 	glVertexAttribPointer(_colorSlottwo, 4, GL_FLOAT, GL_FALSE,
@@ -426,8 +435,12 @@ const GLubyte Indices[] = {0,1,2,3};
 - (void)lashenWithPoint:(CGPoint)touchPoint {
 	CGFloat midWidth;
 	CGFloat midHeight;
+	
 	midWidth = (_imageWidth - _glViewWidth)/2;
 	midHeight = 0;
+	
+	_touchx = midWidth + touchPoint.x;
+	_touchy = touchPoint.y;
 	FVertices[0].Position[0] = midWidth + touchPoint.x - _mosaicRadius;
 	FVertices[0].Position[1] =   touchPoint.y - _mosaicRadius;
 	FVertices[1].Position[0] = midWidth +  touchPoint.x + _mosaicRadius;
@@ -445,10 +458,12 @@ const GLubyte Indices[] = {0,1,2,3};
 	FVertices[2].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
 	FVertices[3].TexCoord[0] = (midWidth  + touchPoint.x + _mosaicRadius) / (_imageWidth);
 	FVertices[3].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
+	
 }
-
 - (void)pingpuWithPoint:(CGPoint)touchPoint {
 	
+	_touchx = touchPoint.x;
+	_touchy = touchPoint.y;
 	FVertices[0].Position[0] =  touchPoint.x - _mosaicRadius;
 	FVertices[0].Position[1] =  touchPoint.y - _mosaicRadius;
 	FVertices[1].Position[0] =  touchPoint.x + _mosaicRadius;
@@ -470,6 +485,9 @@ const GLubyte Indices[] = {0,1,2,3};
 - (void)juzhongWithPoint:(CGPoint)touchPoint {
 	CGFloat midHeight;
 	midHeight = (_imageHeight - _glViewHeight)/2;
+	
+	_touchx =  touchPoint.x;
+	_touchy	=  midHeight + touchPoint.y;
 	
 	FVertices[0].Position[0] = touchPoint.x - _mosaicRadius;
 	FVertices[0].Position[1] =   midHeight + touchPoint.y - _mosaicRadius;
