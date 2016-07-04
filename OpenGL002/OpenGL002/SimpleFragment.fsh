@@ -17,7 +17,6 @@ void main(void) {
 	vec2 XYMosaic = vec2(floor(intXY.x / mosaicSize.x) * mosaicSize.x,floor(intXY.y/mosaicSize.y) * mosaicSize.y);
 	vec2 UVMosaic = vec2(XYMosaic.x/TexSize.x,XYMosaic.y/TexSize.y);
 	vec4 baseMap =  texture2D(Texture,UVMosaic);
-	
 	if (length(position) > MosaicRadius) {
 		discard;
 	}

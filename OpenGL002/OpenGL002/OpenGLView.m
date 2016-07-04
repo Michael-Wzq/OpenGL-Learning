@@ -16,6 +16,7 @@ typedef struct {
 	float Color[4];
 	float TexCoord[2];
 } Vertex;
+
 Vertex Vertices[];
 Vertex FVertices[];
 
@@ -155,6 +156,7 @@ const GLubyte Indices[] = {0,1,2,3};
 		_picType = type;
 		_glViewWidth = self.frame.size.width;
 		_glViewHeight = self.frame.size.height;
+	
 		[self setupValue:@"aaa.jpg"];
 		[self setupLayer];
 		[self setupContext];
@@ -164,7 +166,6 @@ const GLubyte Indices[] = {0,1,2,3};
 		[self setupVBOs];
 		_floorTexture = [self setupTexture:@"aaa.jpg"];
 		_fbo = [[GLFbo alloc] initWithSize:CGSizeMake(_imageWidth, _imageHeight)];
-	
 		[self touchesBegan:nil withEvent:nil];
 	}
 	return self;
@@ -348,25 +349,96 @@ const GLubyte Indices[] = {0,1,2,3};
 
 
 
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event	{
+	
+}
+
+- (CGFloat )addTouchPointWithX:(CGFloat)x gradient:(CGFloat)k b:(CGFloat)b{
+	CGFloat y ;
+	y = k * x + b;
+	return y;
+}
+
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
 	UITouch *touch = [touches anyObject];
 	CGPoint touchPoint = [touch locationInView:self];
+	CGPoint previousTouchPoint = [touch previousLocationInView:self];
+	
+//	NSLog(@"---------（%f，%f）---------",touchPoint.x,touchPoint.y);
+
+	NSLog(@"%lu",(unsigned long)touch.timestamp);
+	
+//	NSLog(@"---------（%f，%f）---------",previousTouchPoint.x,previousTouchPoint.y);
 	
 	
+	CGFloat differX = touchPoint.x - previousTouchPoint.x ;
+	CGFloat differY = touchPoint.y - previousTouchPoint.y ;
+	CGFloat gradient ;
+	CGFloat b ;
+	if (touchPoint.x > previousTouchPoint.x) {
+		CGPoint temp;
+		temp = touchPoint;
+		touchPoint = previousTouchPoint;
+		previousTouchPoint = temp;
+	}
+	
+	
+	if (differX != 0 ) {
+		gradient = differY / differX;
+		b = touchPoint.y - gradient*touchPoint.x;
+	
+	for (float i = touchPoint.x; i <= previousTouchPoint.x; i = i + 0.5 ) {
+		CGPoint	addPoint;
+		addPoint.x = i ;
+		addPoint.y = [self addTouchPointWithX:i gradient:gradient b:b];
+		NSLog(@"---------(%f,%f)---------",addPoint.x,addPoint.y);
 	switch (_picType) {
 		case 0:
-			[self lashenWithPoint:touchPoint];
+			[self lashenWithPoint:addPoint];
 			break;
 		case 1:
-			[self pingpuWithPoint:touchPoint];
+			[self pingpuWithPoint:addPoint];
 			break;
 		case 2:
-			[self juzhongWithPoint:touchPoint];
+			[self juzhongWithPoint:addPoint];
 			break;
 		default:
 			break;
 	}
+	[self drawFbo];
+		
+	}
+	
+	
+	}else {
+		for (float i = touchPoint.y; i <= previousTouchPoint.y; i = i + 0.5 ) {
+			CGPoint	addPoint;
+			addPoint.x = touchPoint.x;
+			addPoint.y = i;
+			NSLog(@"---------(%f,%f)---------",addPoint.x,addPoint.y);
+			switch (_picType) {
+				case 0:
+					[self lashenWithPoint:addPoint];
+					break;
+				case 1:
+					[self pingpuWithPoint:addPoint];
+					break;
+				case 2:
+					[self juzhongWithPoint:addPoint];
+					break;
+				default:
+					break;
+			}
+			[self drawFbo];
+		}
+	}
+	
 
+	
+}
+
+
+- (void)drawFbo {
 	GLKMatrix4 matrix;
 	matrix = GLKMatrix4MakeOrtho(0,
 								 _imageWidth,
@@ -383,14 +455,9 @@ const GLubyte Indices[] = {0,1,2,3};
 	glBindTexture(GL_TEXTURE_2D, _floorTexture);
 	glUniform1i(_textureUniform, 0);
 	glUniform2f(_texSizeUniform, _imageWidth, _imageHeight);
-	
-	
 	glUniform1f(_mosaicSizeUniform, _mosaicRadius/2.0);
-	NSLog(@"%f",_mosaicRadius/2.0);
-	
 	glUniform2f(_touchPointUniform, _touchx,_touchy);
-	NSLog(@"%f %f",_touchx,_touchy);
-	NSLog(@"%f %f",_touchx/_imageWidth,_touchy/_imageHeight);
+	
 	
 	
 	glVertexAttribPointer(_positionSlottwo, 2, GL_FLOAT, GL_FALSE,
@@ -404,9 +471,9 @@ const GLubyte Indices[] = {0,1,2,3};
 	
 	
 	matrix = GLKMatrix4MakeOrtho(0,
-								_glViewWidth,
+								 _glViewWidth,
 								 0,
-								_glViewHeight,
+								 _glViewHeight,
 								 -1,
 								 1);
 	glViewport(0, 0, _glViewWidth, _glViewHeight);
@@ -426,12 +493,11 @@ const GLubyte Indices[] = {0,1,2,3};
 						  sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
 	glVertexAttribPointer(_texCoordSlot, 2, GL_FLOAT, GL_FALSE,
 						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
-	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
-	
-	
+	glDrawElements(GL_TRIANGLE_STRIP, 4 ,GL_UNSIGNED_BYTE, Indices);
 	
 	[_context presentRenderbuffer:GL_RENDERBUFFER];
 }
+
 - (void)lashenWithPoint:(CGPoint)touchPoint {
 	CGFloat midWidth;
 	CGFloat midHeight;

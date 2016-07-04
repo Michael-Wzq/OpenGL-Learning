@@ -16,23 +16,18 @@
 
 - (void)viewDidLoad {
 	[super viewDidLoad];
-
-	
-	
 }
 
 - (void)viewWillAppear:(BOOL)animated
 {
 	[super viewWillAppear:animated];
-	
-
 }
 
 - (void)viewDidAppear:(BOOL)animated
 {
 	[super viewDidAppear:animated];
 	
-	UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(0, 530, 320, 30)];
+	UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(0, 530, [UIScreen mainScreen].bounds.size.width, 30)];
 	slider.minimumValue = 5;
 	slider.maximumValue	= 50;
 	slider.value =  10;
@@ -43,7 +38,6 @@
 	
 	
 	
-	NSLog(@"width = %f",[UIScreen mainScreen].bounds.size.width);
 	MTTabCollectionViewLayout *itemsLayout = [[MTTabCollectionViewLayout alloc]initWithHeight:35 width:60 contentWidth:[UIScreen mainScreen].bounds.size.width itemsSpacing:10];
 	itemsLayout.zoomFactor = 0.3;
 	
@@ -70,7 +64,7 @@
 	//	view.selectedColor = [UIColor redColor];
 	//  view.pointColor = [UIColor grayColor];
 	//	view.pointRadius = 3 ;
-	NSArray *array = [[NSArray alloc] initWithObjects:@"拉伸",@"平铺",@"居中",nil];
+	NSArray *array = [[NSArray alloc] initWithObjects:@"居中",@"拉伸",@"原图",nil];
 	tabView.titlesArray = array;
 	[self.view addSubview:tabView];
 	
@@ -82,9 +76,8 @@
 	_glView.mosaicRadius = _slider.value;
 }
 - (void)lashenPicture {
-	NSLog(@"拉伸");
 	_glView = nil;
-	OpenGLView *view = [[OpenGLView alloc] initWithFrame:CGRectMake(0, 0, 320, 480) type:0] ;
+	OpenGLView *view = [[OpenGLView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 480) type:0] ;
 	view.mosaicRadius =  _slider.value;
 	_glView = view;
 	[self.view addSubview:view];
@@ -92,8 +85,7 @@
 }
 - (void)pingpuPicture {
 	_glView = nil;
-	NSLog(@"平铺");
-	OpenGLView *view = [[OpenGLView alloc] initWithFrame:CGRectMake(0, 0, 320, 480) type:1] ;
+	OpenGLView *view = [[OpenGLView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 480) type:1] ;
 	view.mosaicRadius =  _slider.value;
 	_glView = view;
 	[self.view addSubview:view];
@@ -101,8 +93,7 @@
 }
 - (void)juzhongPicture {
 	_glView = nil;
-	NSLog(@"居中");
-	OpenGLView *view = [[OpenGLView alloc] initWithFrame:CGRectMake(0, 0, 320, 480) type:2] ;
+	OpenGLView *view = [[OpenGLView alloc] initWithFrame:CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 480) type:2] ;
 	view.mosaicRadius =  _slider.value;
 	_glView = view;
 	[self.view addSubview:view];
