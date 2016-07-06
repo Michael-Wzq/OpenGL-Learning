@@ -44,7 +44,7 @@
 	MTTabCollectionView *tabView = [[MTTabCollectionView alloc]
 									initWithFrame:CGRectMake(0, 480, [UIScreen mainScreen].bounds.size.width, 50)
 								 collectionViewLayout:itemsLayout
-								 defaultIndex:2
+								 defaultIndex:0
 								 selectedBlock:^(MTTabCollectionView *tabCollectionView, NSIndexPath *selectedIndexPath){
 										switch (selectedIndexPath.row) {
 											case 0:

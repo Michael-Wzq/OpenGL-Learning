@@ -50,6 +50,8 @@
 	
 	GLuint _touchPointUniform;
 	GLuint _mosaicSizeUniform;
+	GLuint _boolOfDrawCircle;
+
 
 }
 - (id)initWithFrame:(CGRect)frame type:(NSInteger)type;

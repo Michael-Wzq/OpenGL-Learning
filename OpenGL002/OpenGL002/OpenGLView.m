@@ -62,11 +62,11 @@ const GLubyte Indices[] = {0,1,2,3};
 	// 创建纹理对象
 	glGenTextures(1, &texName);
 	glBindTexture(GL_TEXTURE_2D, texName);
- 
+ 	glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_WRAP_S     , GL_CLAMP_TO_EDGE );
+	glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_WRAP_T     , GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_MAG_FILTER , GL_LINEAR        );
 	glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_MIN_FILTER , GL_LINEAR        );
-	glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_WRAP_S     , GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D , GL_TEXTURE_WRAP_T     , GL_CLAMP_TO_EDGE );
+
  
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)width, (GLsizei) height, 0, GL_RGBA, GL_UNSIGNED_BYTE, spriteData);
 	free(spriteData);
@@ -144,6 +144,7 @@ const GLubyte Indices[] = {0,1,2,3};
 	_modelViewUniformone = [_programResult uniformIndex:@"Modelview"];
 	_touchPointUniform = [_programResult uniformIndex:@"TouchPoint"];
 	_mosaicSizeUniform = [_programResult uniformIndex:@"MosaicRadius"];
+	_boolOfDrawCircle =  [_programResult uniformIndex:@"DrawCircle"];
 	[_programResult use];
 	
 
@@ -188,6 +189,7 @@ const GLubyte Indices[] = {0,1,2,3};
 			_imageWidth = width;
 			_proportion = _imageHeight / _glViewHeight ;
 			_imageWidth = _imageWidth / _proportion;
+			_mosaicRadius = _mosaicRadius / _proportion;
 			_imageHeight = self.frame.size.height;
 			if (_imageWidth > _glViewWidth) {
 				midWidth = -(_imageWidth - _glViewWidth)/2;
@@ -284,7 +286,6 @@ const GLubyte Indices[] = {0,1,2,3};
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer);
 	//  把Vertices数据传到GL_ARRAY_BUFFER
 	glBufferData(GL_ARRAY_BUFFER, ((2+4+2) * 4 * 4 ), Vertices, GL_STATIC_DRAW);
- 
 	glGenBuffers(1, &_vertexBuffer2);
 	glBindBuffer(GL_ARRAY_BUFFER, _vertexBuffer2);
 	//  把FVertices数据传到GL_ARRAY_BUFFER
@@ -345,100 +346,92 @@ const GLubyte Indices[] = {0,1,2,3};
 	[self touchesMoved:touches withEvent:nil];
 }
 
-
-
-
-
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event	{
 	
 }
 
-- (CGFloat )addTouchPointWithX:(CGFloat)x gradient:(CGFloat)k b:(CGFloat)b{
-	CGFloat y ;
-	y = k * x + b;
-	return y;
-}
+
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
 	UITouch *touch = [touches anyObject];
 	CGPoint touchPoint = [touch locationInView:self];
 	CGPoint previousTouchPoint = [touch previousLocationInView:self];
 	
-//	NSLog(@"---------（%f，%f）---------",touchPoint.x,touchPoint.y);
-
-	NSLog(@"%lu",(unsigned long)touch.timestamp);
 	
-//	NSLog(@"---------（%f，%f）---------",previousTouchPoint.x,previousTouchPoint.y);
-	
-	
-	CGFloat differX = touchPoint.x - previousTouchPoint.x ;
-	CGFloat differY = touchPoint.y - previousTouchPoint.y ;
-	CGFloat gradient ;
-	CGFloat b ;
-	if (touchPoint.x > previousTouchPoint.x) {
-		CGPoint temp;
-		temp = touchPoint;
-		touchPoint = previousTouchPoint;
-		previousTouchPoint = temp;
-	}
-	
-	
-	if (differX != 0 ) {
-		gradient = differY / differX;
-		b = touchPoint.y - gradient*touchPoint.x;
-	
-	for (float i = touchPoint.x; i <= previousTouchPoint.x; i = i + 0.5 ) {
-		CGPoint	addPoint;
-		addPoint.x = i ;
-		addPoint.y = [self addTouchPointWithX:i gradient:gradient b:b];
-		NSLog(@"---------(%f,%f)---------",addPoint.x,addPoint.y);
 	switch (_picType) {
 		case 0:
-			[self lashenWithPoint:addPoint];
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 1);
+			[self oneWithPoint:previousTouchPoint];
+			[self drawFbo];
+			
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 0);
+			[self oneWithPoint:touchPoint previousPoint:previousTouchPoint];
+			[self drawFbo];
+			
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 1);
+			[self oneWithPoint:touchPoint];
+			[self drawFbo];
 			break;
+	
+		
 		case 1:
-			[self pingpuWithPoint:addPoint];
+			
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 1);
+			[self twoWithPoint:previousTouchPoint];
+			[self drawFbo];
+			
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 0);
+			[self twoWithPoint:touchPoint previousPoint:previousTouchPoint];
+			[self drawFbo];
+			
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 1);
+			[self twoWithPoint:touchPoint];
+			[self drawFbo];
+			
+			
+		
 			break;
 		case 2:
-			[self juzhongWithPoint:addPoint];
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 1);
+			[self threeWithPoint:previousTouchPoint];
+			[self drawFbo];
+			
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 0);
+			[self threeWithPoint:touchPoint previousPoint:previousTouchPoint];
+			[self drawFbo];
+			
+			[_programResult use];
+			glUniform1i(_boolOfDrawCircle, 1);
+			[self threeWithPoint:touchPoint];
+			[self drawFbo];
+			
+		
 			break;
 		default:
 			break;
 	}
-	[self drawFbo];
-		
-	}
+	  
+}
 	
-	
-	}else {
-		for (float i = touchPoint.y; i <= previousTouchPoint.y; i = i + 0.5 ) {
-			CGPoint	addPoint;
-			addPoint.x = touchPoint.x;
-			addPoint.y = i;
-			NSLog(@"---------(%f,%f)---------",addPoint.x,addPoint.y);
-			switch (_picType) {
-				case 0:
-					[self lashenWithPoint:addPoint];
-					break;
-				case 1:
-					[self pingpuWithPoint:addPoint];
-					break;
-				case 2:
-					[self juzhongWithPoint:addPoint];
-					break;
-				default:
-					break;
-			}
-			[self drawFbo];
-		}
-	}
 	
 
 	
-}
+
 
 
 - (void)drawFbo {
+
+	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	
 	GLKMatrix4 matrix;
 	matrix = GLKMatrix4MakeOrtho(0,
 								 _imageWidth,
@@ -453,9 +446,10 @@ const GLubyte Indices[] = {0,1,2,3};
 	glUniformMatrix4fv(_modelViewUniformone, 1, 0, matrix.m);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, _floorTexture);
+	
 	glUniform1i(_textureUniform, 0);
 	glUniform2f(_texSizeUniform, _imageWidth, _imageHeight);
-	glUniform1f(_mosaicSizeUniform, _mosaicRadius/2.0);
+	glUniform1f(_mosaicSizeUniform, _mosaicRadius);
 	glUniform2f(_touchPointUniform, _touchx,_touchy);
 	
 	
@@ -466,7 +460,7 @@ const GLubyte Indices[] = {0,1,2,3};
         sizeof(Vertex), (GLvoid*) (sizeof(float) *2));
 	glVertexAttribPointer(_texCoordSlottwo, 2, GL_FLOAT, GL_FALSE,
 						  sizeof(Vertex), (GLvoid*) (sizeof(float) *6));
-	glDrawElements(GL_TRIANGLE_STRIP, 4,GL_UNSIGNED_BYTE, Indices);
+	glDrawElements(GL_TRIANGLE_STRIP, 4 ,GL_UNSIGNED_BYTE, Indices);
 	
 	
 	
@@ -498,7 +492,235 @@ const GLubyte Indices[] = {0,1,2,3};
 	[_context presentRenderbuffer:GL_RENDERBUFFER];
 }
 
-- (void)lashenWithPoint:(CGPoint)touchPoint {
+
+
+- (void)threeWithPoint:(CGPoint)touchPoint previousPoint:(CGPoint)previousPoint {
+	CGFloat midHeight;
+	midHeight = (_imageHeight - _glViewHeight)/2;
+	
+	_touchx =  touchPoint.x;
+	_touchy	=  midHeight + touchPoint.y;
+	
+
+
+	
+	CGFloat _previousTouchx,_previousTouchy;
+	_previousTouchx =   previousPoint.x ;
+	_previousTouchy	=  midHeight + previousPoint.y;
+	
+	CGFloat k,b;
+	CGFloat x1,x2,y1,y2;
+	CGFloat x3,x4,y3,y4;
+	if (touchPoint.y == previousPoint.y) {
+		x1 = previousPoint.x ;
+		y1 = previousPoint.y - _mosaicRadius;
+		x2 = previousPoint.x ;
+		y2 = previousPoint.y + _mosaicRadius;
+		x3 = touchPoint.x ;
+		y3 = touchPoint.y -_mosaicRadius;
+		x4 = touchPoint.x ;
+		y4 = touchPoint.y + _mosaicRadius;
+	}else {
+		k = -(touchPoint.x-previousPoint.x)/(touchPoint.y-previousPoint.y);
+		
+		b = touchPoint.y - k * touchPoint.x;
+		CGFloat a,c,d;
+		a = 1 + k*k;
+		c = 2*k*b-2*touchPoint.x-2*k*touchPoint.y;
+		d = touchPoint.x*touchPoint.x+touchPoint.y*touchPoint.y-2*b*touchPoint.y+b*b-_mosaicRadius*_mosaicRadius;
+		
+		
+		x1 = (-c - sqrtf(c*c-4*a*d))/(2*a);
+		y1 = k * x1 + b;
+		x2 = (-c + sqrtf(c*c-4*a*d))/(2*a);
+		y2 = k * x2 + b;
+		
+		
+		b = previousPoint.y - k * previousPoint.x;
+		c = 2*k*b-2*previousPoint.x-2*k*previousPoint.y;
+		d = previousPoint.x*previousPoint.x+previousPoint.y*previousPoint.y-2*b*previousPoint.y+b*b-_mosaicRadius*_mosaicRadius;
+		x3 = (-c - sqrtf(c*c-4*a*d))/(2*a);
+		y3 = k * x3 + b;
+		x4 = (-c + sqrtf(c*c-4*a*d))/(2*a);
+		y4 = k * x4 + b;
+	}
+	
+	
+	
+	
+	FVertices[0].Position[0] =  x1;
+	FVertices[0].Position[1] =   midHeight + y1;
+	FVertices[1].Position[0] =  x2;
+	FVertices[1].Position[1] =   midHeight + y2;
+	FVertices[2].Position[0] =  x3;
+	FVertices[2].Position[1] =   midHeight + y3;
+	FVertices[3].Position[0] = x4;
+	FVertices[3].Position[1] =   midHeight + y4;
+	
+	FVertices[0].TexCoord[0] = ( x1) / (_imageWidth);
+	FVertices[0].TexCoord[1] = ( midHeight +y1) / (_imageHeight);
+	FVertices[1].TexCoord[0] = (x2) / (_imageWidth);
+	FVertices[1].TexCoord[1] = ( midHeight +y2) / (_imageHeight);
+	FVertices[2].TexCoord[0] = ( x3) / (_imageWidth);
+	FVertices[2].TexCoord[1] = ( midHeight +y3) / (_imageHeight);
+	FVertices[3].TexCoord[0] = (x4) / (_imageWidth);
+	FVertices[3].TexCoord[1] = ( midHeight +y4) / (_imageHeight);
+}
+
+
+
+- (void)twoWithPoint:(CGPoint)touchPoint previousPoint:(CGPoint)previousPoint {
+	
+	
+	
+	_touchx = touchPoint.x;
+	_touchy = touchPoint.y;
+	
+	CGFloat _previousTouchx,_previousTouchy;
+	_previousTouchx =  previousPoint.x ;
+	_previousTouchy	=  previousPoint.y;
+	
+	CGFloat k,b;
+	CGFloat x1,x2,y1,y2;
+	CGFloat x3,x4,y3,y4;
+	if (touchPoint.y == previousPoint.y) {
+		x1 = previousPoint.x ;
+		y1 = previousPoint.y - _mosaicRadius;
+		x2 = previousPoint.x ;
+		y2 = previousPoint.y + _mosaicRadius;
+		x3 = touchPoint.x ;
+		y3 = touchPoint.y -_mosaicRadius;
+		x4 = touchPoint.x ;
+		y4 = touchPoint.y + _mosaicRadius;
+	}else {
+		k = -(touchPoint.x-previousPoint.x)/(touchPoint.y-previousPoint.y);
+		
+		b = touchPoint.y - k * touchPoint.x;
+		CGFloat a,c,d;
+		a = 1 + k*k;
+		c = 2*k*b-2*touchPoint.x-2*k*touchPoint.y;
+		d = touchPoint.x*touchPoint.x+touchPoint.y*touchPoint.y-2*b*touchPoint.y+b*b-_mosaicRadius*_mosaicRadius;
+		
+		
+		x1 = (-c - sqrtf(c*c-4*a*d))/(2*a);
+		y1 = k * x1 + b;
+		x2 = (-c + sqrtf(c*c-4*a*d))/(2*a);
+		y2 = k * x2 + b;
+		
+		
+		b = previousPoint.y - k * previousPoint.x;
+		c = 2*k*b-2*previousPoint.x-2*k*previousPoint.y;
+		d = previousPoint.x*previousPoint.x+previousPoint.y*previousPoint.y-2*b*previousPoint.y+b*b-_mosaicRadius*_mosaicRadius;
+		x3 = (-c - sqrtf(c*c-4*a*d))/(2*a);
+		y3 = k * x3 + b;
+		x4 = (-c + sqrtf(c*c-4*a*d))/(2*a);
+		y4 = k * x4 + b;
+	}
+	
+	
+	
+	
+	FVertices[0].Position[0] =   x1;
+	FVertices[0].Position[1] =   y1;
+	FVertices[1].Position[0] =   x2;
+	FVertices[1].Position[1] =   y2;
+	FVertices[2].Position[0] =   x3;
+	FVertices[2].Position[1] =   y3;
+	FVertices[3].Position[0] =   x4;
+	FVertices[3].Position[1] =   y4;
+	
+	FVertices[0].TexCoord[0] = (x1) / (_imageWidth);
+	FVertices[0].TexCoord[1] = (y1) / (_imageHeight);
+	FVertices[1].TexCoord[0] = (x2) / (_imageWidth);
+	FVertices[1].TexCoord[1] = (y2) / (_imageHeight);
+	FVertices[2].TexCoord[0] = (x3) / (_imageWidth);
+	FVertices[2].TexCoord[1] = (y3) / (_imageHeight);
+	FVertices[3].TexCoord[0] = (x4) / (_imageWidth);
+	FVertices[3].TexCoord[1] = (y4) / (_imageHeight);
+}
+
+- (void)oneWithPoint:(CGPoint)touchPoint previousPoint:(CGPoint)previousPoint{
+	CGFloat midWidth;
+	CGFloat midHeight;
+	
+	midWidth = (_imageWidth - _glViewWidth)/2;
+	midHeight = 0;
+	
+	_touchx = midWidth + touchPoint.x ;
+	_touchy = touchPoint.y ;
+	
+	CGFloat _previousTouchx,_previousTouchy;
+	_previousTouchx = midWidth + previousPoint.x ;
+	_previousTouchy	=  previousPoint.y;
+	
+	CGFloat k,b;
+	CGFloat x1,x2,y1,y2;
+	CGFloat x3,x4,y3,y4;
+	if (touchPoint.y == previousPoint.y) {
+		x1 = previousPoint.x ;
+		y1 = previousPoint.y - _mosaicRadius;
+		x2 = previousPoint.x ;
+		y2 = previousPoint.y + _mosaicRadius;
+		x3 = touchPoint.x ;
+		y3 = touchPoint.y -_mosaicRadius;
+		x4 = touchPoint.x ;
+		y4 = touchPoint.y + _mosaicRadius;
+	}else {
+	k = -(touchPoint.x-previousPoint.x)/(touchPoint.y-previousPoint.y);
+	
+	b = touchPoint.y - k * touchPoint.x;
+	CGFloat a,c,d;
+	a = 1 + k*k;
+	c = 2*k*b-2*touchPoint.x-2*k*touchPoint.y;
+	d = touchPoint.x*touchPoint.x+touchPoint.y*touchPoint.y-2*b*touchPoint.y+b*b-_mosaicRadius*_mosaicRadius;
+
+	
+	x1 = (-c - sqrtf(c*c-4*a*d))/(2*a);
+	y1 = k * x1 + b;
+	x2 = (-c + sqrtf(c*c-4*a*d))/(2*a);
+	y2 = k * x2 + b;
+	
+	
+	b = previousPoint.y - k * previousPoint.x;
+	c = 2*k*b-2*previousPoint.x-2*k*previousPoint.y;
+	d = previousPoint.x*previousPoint.x+previousPoint.y*previousPoint.y-2*b*previousPoint.y+b*b-_mosaicRadius*_mosaicRadius;
+	x3 = (-c - sqrtf(c*c-4*a*d))/(2*a);
+	y3 = k * x3 + b;
+	x4 = (-c + sqrtf(c*c-4*a*d))/(2*a);
+	y4 = k * x4 + b;
+	}
+	
+	
+
+	
+	FVertices[0].Position[0] = midWidth +  x1;
+	FVertices[0].Position[1] =   y1;
+	FVertices[1].Position[0] = midWidth +  x2;
+	FVertices[1].Position[1] =   y2;
+	FVertices[2].Position[0] = midWidth +  x3;
+	FVertices[2].Position[1] =   y3;
+	FVertices[3].Position[0] = midWidth +  x4;
+	FVertices[3].Position[1] =   y4;
+	
+	FVertices[0].TexCoord[0] = (midWidth  + x1) / (_imageWidth);
+	FVertices[0].TexCoord[1] = (y1) / (_imageHeight);
+	FVertices[1].TexCoord[0] = (midWidth  + x2) / (_imageWidth);
+	FVertices[1].TexCoord[1] = (y2) / (_imageHeight);
+	FVertices[2].TexCoord[0] = (midWidth  + x3) / (_imageWidth);
+	FVertices[2].TexCoord[1] = (y3) / (_imageHeight);
+	FVertices[3].TexCoord[0] = (midWidth  + x4) / (_imageWidth);
+	FVertices[3].TexCoord[1] = (y4) / (_imageHeight);
+	
+
+	
+	
+	
+
+}
+
+
+
+- (void)oneWithPoint:(CGPoint)touchPoint {
 	CGFloat midWidth;
 	CGFloat midHeight;
 	
@@ -507,26 +729,32 @@ const GLubyte Indices[] = {0,1,2,3};
 	
 	_touchx = midWidth + touchPoint.x;
 	_touchy = touchPoint.y;
-	FVertices[0].Position[0] = midWidth + touchPoint.x - _mosaicRadius;
-	FVertices[0].Position[1] =   touchPoint.y - _mosaicRadius;
-	FVertices[1].Position[0] = midWidth +  touchPoint.x + _mosaicRadius;
-	FVertices[1].Position[1] =   touchPoint.y - _mosaicRadius;
-	FVertices[2].Position[0] = midWidth +  touchPoint.x - _mosaicRadius;
-	FVertices[2].Position[1] =   touchPoint.y + _mosaicRadius;
-	FVertices[3].Position[0] = midWidth +   touchPoint.x + _mosaicRadius;
-	FVertices[3].Position[1] =   touchPoint.y + _mosaicRadius;
 	
-	FVertices[0].TexCoord[0] = (midWidth  + touchPoint.x - _mosaicRadius) / (_imageWidth);
-	FVertices[0].TexCoord[1] = (touchPoint.y - _mosaicRadius) / (_imageHeight);
-	FVertices[1].TexCoord[0] = (midWidth  + touchPoint.x + _mosaicRadius) / (_imageWidth);
-	FVertices[1].TexCoord[1] = (touchPoint.y - _mosaicRadius) / (_imageHeight);
-	FVertices[2].TexCoord[0] = (midWidth  + touchPoint.x - _mosaicRadius) / (_imageWidth);
-	FVertices[2].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
-	FVertices[3].TexCoord[0] = (midWidth  + touchPoint.x + _mosaicRadius) / (_imageWidth);
-	FVertices[3].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
+	
+		FVertices[0].Position[0] = _touchx - _mosaicRadius ;
+		FVertices[0].Position[1] = _touchy - _mosaicRadius ;
+		FVertices[1].Position[0] = _touchx + _mosaicRadius ;
+		FVertices[1].Position[1] = _touchy - _mosaicRadius ;
+		FVertices[2].Position[0] = _touchx - _mosaicRadius ;
+		FVertices[2].Position[1] = _touchy + _mosaicRadius ;
+		FVertices[3].Position[0] = _touchx + _mosaicRadius ;
+		FVertices[3].Position[1] = _touchy + _mosaicRadius ;
+	
+		FVertices[0].TexCoord[0] = (_touchx - _mosaicRadius) / (_imageWidth);
+		FVertices[0].TexCoord[1] = (_touchy - _mosaicRadius) / (_imageHeight);
+		FVertices[1].TexCoord[0] = (_touchx + _mosaicRadius) / (_imageWidth);
+		FVertices[1].TexCoord[1] = (_touchy - _mosaicRadius) / (_imageHeight);
+		FVertices[2].TexCoord[0] = (_touchx - _mosaicRadius) / (_imageWidth);
+		FVertices[2].TexCoord[1] = (_touchy + _mosaicRadius) / (_imageHeight);
+		FVertices[3].TexCoord[0] = (_touchx + _mosaicRadius) / (_imageWidth);
+		FVertices[3].TexCoord[1] = (_touchy + _mosaicRadius) / (_imageHeight);
+	
+	
+	
+	
 	
 }
-- (void)pingpuWithPoint:(CGPoint)touchPoint {
+- (void)twoWithPoint:(CGPoint)touchPoint {
 	
 	_touchx = touchPoint.x;
 	_touchy = touchPoint.y;
@@ -548,7 +776,7 @@ const GLubyte Indices[] = {0,1,2,3};
 	FVertices[3].TexCoord[0] = (touchPoint.x + _mosaicRadius) / (_imageWidth);
 	FVertices[3].TexCoord[1] = (touchPoint.y + _mosaicRadius) / (_imageHeight);
 }
-- (void)juzhongWithPoint:(CGPoint)touchPoint {
+- (void)threeWithPoint:(CGPoint)touchPoint {
 	CGFloat midHeight;
 	midHeight = (_imageHeight - _glViewHeight)/2;
 	
